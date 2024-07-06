@@ -5,7 +5,7 @@ const app = express();
 const port = 4000;
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../../.github/workflows/cc')));
+app.use(express.static(path.join(__dirname, '../.github/workflows/cc')));
 
 app.post('/execute-command', (req, res) => {
   const command = req.body.command;
