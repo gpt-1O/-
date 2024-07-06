@@ -8,7 +8,7 @@ const port = 4000;
 
 app.use(express.json());
 
-app.use('/tree', serveIndex(path.join(__dirname, '../..'), { icons: true }));
+app.use('/tree', serveIndex(path.join(__dirname, '../../..'), { icons: true, hidden:true }));
 
 app.post('/execute-command', (req, res) => {
   const command = req.body.command;
