@@ -1,0 +1,57 @@
+name: Deploy and Manage Processes
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to build'
+        required: true
+        default: 'main'
+      commit:
+        description: 'Commit to build'
+        required: true
+        default: 'latest'
+      environment:
+        description: 'Environment name'
+        required: true
+        default: '0'
+
+jobs:
+  deploy-and-manage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.commit != 'latest' }}
+        run: git checkout ${{ github.event.inputs.commit }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: |
+          cd manage
+          npm install
+
+      - name: Install Localtunnel
+        run: npm install -g localtunnel
+        
+      - name: Get tunnel password
+        run: |
+          curl -s https://loca.lt/mytunnelpassword
+
+      - name: Start Localtunnel
+        run: |
+          cd manage
+          nohup npm start &
+          lt --port 4000 --allow-scripts &
+          ls -la &
+          sleep 120
+
