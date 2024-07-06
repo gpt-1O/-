@@ -1,0 +1,62 @@
+name: Deploy and Manage Processes
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to build'
+        required: true
+        default: 'main'
+      commit:
+        description: 'Commit to build'
+        required: true
+        default: 'latest'
+      environment:
+        description: 'Environment name'
+        required: true
+        default: '0'
+
+jobs:
+  deploy-and-manage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.commit != 'latest' }}
+        run: git checkout ${{ github.event.inputs.commit }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Management Script
+        run: |
+          nohup node ./scripts/manage.js &
+
+      - name: Setup ngrok
+        run: |
+          curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
+          echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
+          sudo apt update
+          sudo apt install ngrok
+
+      - name: Start ngrok
+        run: |
+          nohup ngrok http 4000 > ngrok.log &
+          sleep 5
+          NGROK_URL=$(curl -s http://localhost:4040/api/tunnels | jq -r .tunnels[0].public_url)
+          echo "Management app is exposed at: $NGROK_URL"
+        id: get-ngrok-url
+
+      - name: Print ngrok URL
+        run: |
+          echo "Your management app is exposed at: ${{ steps.get-ngrok-url.outputs.ngrok_url }}"
